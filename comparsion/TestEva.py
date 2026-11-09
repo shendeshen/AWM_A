@@ -15,9 +15,9 @@ plt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
 
 
-DATA_PATH   = "../LVL/data06/ArgwalG40.csv"
+DATA_PATH   = "../LVL/data06/tree_g_DCC.csv"
 WINDOW      = 500
-N_REPEATS   = 1
+N_REPEATS   = 15
 SEEDS       = list(range(42, 42 + N_REPEATS))
 
 CLASSES     = [0, 1, 2, 3, 4, 5, 6, 7]
@@ -125,9 +125,9 @@ def run_single_experiment(seed):
     gmm_dim = None
     gmm_reset_count = 0
 
+    # RAIL 初始化（不再重置）
     rail = RAIL(random_state=seed, **RAIL_CONFIG)
     rail_dim = None
-    rail_reset_count = 0
 
     total       = 0
     err         = {alg: [] for alg in ALG_NAMES}
@@ -163,13 +163,13 @@ def run_single_experiment(seed):
             gmm_dim = current_dim
             gmm_reset_count += 1
 
+        # --- 注意这里 ---
+        # 仅更新记录的维度，不再重建 RAIL 模型
         if rail_dim is None:
             rail_dim = current_dim
         elif current_dim != rail_dim:
-            print(f"[RAIL] Feature dimension changed {rail_dim} -> {current_dim}, rebuilding RAIL")
-            rail = RAIL(random_state=seed, **RAIL_CONFIG)
+            # print(f"[RAIL] Feature dimension changed {rail_dim} -> {current_dim}, RAIL dynamically handles this without reset.")
             rail_dim = current_dim
-            rail_reset_count += 1
 
         X       = x.reshape(1, -1)
         y_arr   = np.array([y])
@@ -239,7 +239,7 @@ def run_single_experiment(seed):
     print(f"[OBag]     Total resets in this run: {obag_reset_count}")
     print(f"[LiteRVFL] Total resets in this run: {lrvfl_reset_count}")
     print(f"[GMMComp]  Total resets in this run: {gmm_reset_count}")
-    print(f"[RAIL]     Total rebuilds in this run: {rail_reset_count}")
+
 
     final_acc = {alg: (float(np.mean(acc_windows[alg])) if acc_windows[alg] else 0.0)
                  for alg in ALG_NAMES}
